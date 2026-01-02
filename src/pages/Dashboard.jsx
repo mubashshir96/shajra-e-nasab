@@ -206,12 +206,14 @@ export default function Dashboard() {
       />
 
       {selected && (
-        <EditMemberModal
+       <EditMemberModal
           member={selected}
+          members={members}
           onUpdate={updateMember}
           onDelete={deleteMember}
           onClose={() => setSelected(null)}
-        />
+      />
+
       )}
 
       {viewMember && (
