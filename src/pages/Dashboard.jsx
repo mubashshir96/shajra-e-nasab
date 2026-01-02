@@ -9,6 +9,26 @@ import { exportAsImage, exportAsPDF } from "../utils/exportShajra.mjs";
 import MemberDetailModal from "../components/MemberDetailModal";
 
 export default function Dashboard() {
+	const updateMember = async (m) => {
+  const { error } = await supabase
+    .from("members")
+    .update({
+      name: m.name,
+      father_id: m.father_id,
+      village: m.village,
+      dob: m.dob,
+    })
+    .eq("id", m.id)
+    .eq("user_id", user.id); // 🔐 owner check
+
+  if (error) {
+    alert("Update failed: " + error.message);
+    return;
+  }
+
+  loadMembers();
+};
+
   const { t, lang, setLang, isRTL } = useLang();
 
   const [user, setUser] = useState(null);
