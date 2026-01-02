@@ -19,14 +19,14 @@ export default function Dashboard() {
   const [viewMember, setViewMember] = useState(null);
   const [profile, setProfile] = useState(null);
 
-  // 🔑 GET USER
+  /* ================= AUTH ================= */
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
     });
   }, []);
 
-  // 🔒 CHECK BLOCKED
   useEffect(() => {
     if (!user) return;
 
@@ -38,22 +38,22 @@ export default function Dashboard() {
       .then(({ data }) => setProfile(data));
   }, [user]);
 
-  // 📥 LOAD MEMBERS
+  /* ================= MEMBERS ================= */
+
   useEffect(() => {
     if (!user) return;
     loadMembers();
   }, [user]);
 
   const loadMembers = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("members")
       .select("*")
       .eq("user_id", user.id);
 
-    if (!error) setMembers(data || []);
+    setMembers(data || []);
   };
 
-  // ➕ ADD
   const addMember = async (m) => {
     const { error } = await supabase.from("members").insert({
       ...m,
@@ -67,7 +67,6 @@ export default function Dashboard() {
     loadMembers();
   };
 
-  // ✏️ UPDATE
   const updateMember = async (m) => {
     const { error } = await supabase
       .from("members")
@@ -76,12 +75,14 @@ export default function Dashboard() {
         father_id: m.father_id,
         village: m.village,
         dob: m.dob,
+        gender: m.gender,
+        notes: m.notes,
       })
       .eq("id", m.id)
       .eq("user_id", user.id);
 
     if (error) {
-      alert("Update failed: " + error.message);
+      alert(error.message);
       return;
     }
 
@@ -89,7 +90,6 @@ export default function Dashboard() {
     setSelected(null);
   };
 
-  // 🗑 DELETE
   const deleteMember = async (id) => {
     if (!confirm("⚠️ Are you sure you want to delete this member?")) return;
 
@@ -100,7 +100,7 @@ export default function Dashboard() {
       .eq("user_id", user.id);
 
     if (error) {
-      alert("Delete failed: " + error.message);
+      alert(error.message);
       return;
     }
 
@@ -108,7 +108,41 @@ export default function Dashboard() {
     setSelected(null);
   };
 
-  // 🚫 BLOCKED USER
+  /* ================= PHOTO ================= */
+
+  const uploadPhoto = async (file, memberId) => {
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/${memberId}.${ext}`;
+
+    await supabase.storage
+      .from("member-photos")
+      .upload(path, file, { upsert: true });
+
+    const { data } = supabase.storage
+      .from("member-photos")
+      .getPublicUrl(path);
+
+    await supabase
+      .from("members")
+      .update({ photo_url: data.publicUrl })
+      .eq("id", memberId)
+      .eq("user_id", user.id);
+
+    loadMembers();
+  };
+
+  const removePhoto = async (memberId) => {
+    await supabase
+      .from("members")
+      .update({ photo_url: null })
+      .eq("id", memberId)
+      .eq("user_id", user.id);
+
+    loadMembers();
+  };
+
+  /* ================= GUARDS ================= */
+
   if (profile?.blocked) {
     return (
       <h2 style={{ color: "red", padding: 40 }}>
@@ -117,7 +151,6 @@ export default function Dashboard() {
     );
   }
 
-  // 🔒 LOGIN CHECK
   if (!user) {
     return (
       <div style={{ padding: 40 }}>
@@ -127,11 +160,12 @@ export default function Dashboard() {
     );
   }
 
+  /* ================= UI ================= */
+
   return (
     <div style={{ padding: 20 }} dir={isRTL ? "rtl" : "ltr"}>
       <h1>🌳 {t.title}</h1>
 
-      {/* 🌐 Language */}
       <select value={lang} onChange={(e) => setLang(e.target.value)}>
         <option value="en">English</option>
         <option value="hi">हिंदी</option>
@@ -140,7 +174,6 @@ export default function Dashboard() {
 
       <br /><br />
 
-      {/* 🔘 BUTTONS */}
       <button onClick={() => setShowAdd(true)}>➕ {t.addMember}</button>
       <button onClick={exportAsImage}>{t.downloadImage}</button>
       <button onClick={exportAsPDF}>{t.downloadPDF}</button>
@@ -158,7 +191,6 @@ export default function Dashboard() {
         👑 Admin Panel
       </button>
 
-      {/* ➕ ADD MODAL */}
       {showAdd && (
         <AddMemberForm
           members={members}
@@ -167,14 +199,12 @@ export default function Dashboard() {
         />
       )}
 
-      {/* 🌳 TREE */}
       <TreeViewD3
         members={members}
         onView={(m) => setViewMember(m)}
         onEdit={(m) => setSelected(m)}
       />
 
-      {/* ✏️ EDIT MODAL */}
       {selected && (
         <EditMemberModal
           member={selected}
@@ -184,10 +214,15 @@ export default function Dashboard() {
         />
       )}
 
-      {/* 👁 VIEW MODAL */}
       {viewMember && (
         <MemberDetailModal
           member={viewMember}
+          onEdit={(m) => {
+            setViewMember(null);
+            setSelected(m);
+          }}
+          onPhotoUpload={uploadPhoto}
+          onPhotoRemove={removePhoto}
           onClose={() => setViewMember(null)}
         />
       )}
