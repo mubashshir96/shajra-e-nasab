@@ -1,6 +1,12 @@
 import { useState } from "react";
 
-export default function EditMemberModal({ member, onUpdate, onDelete, onClose }) {
+export default function EditMemberModal({
+  member,
+  members,
+  onUpdate,
+  onDelete,
+  onClose,
+}) {
   const [form, setForm] = useState({
     id: member.id,
     name: member.name || "",
@@ -9,72 +15,69 @@ export default function EditMemberModal({ member, onUpdate, onDelete, onClose })
     dob: member.dob || "",
   });
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
   return (
-    <div style={overlayStyle}>
-      <div style={modalStyle}>
-        <h2 style={{ marginBottom: 10 }}>✏️ Edit Family Member</h2>
+    <div style={overlay}>
+      <div style={modal}>
+        <h2>✏️ Edit Family Member</h2>
 
-        {/* Name */}
         <label>Name</label>
         <input
-          name="name"
           value={form.name}
-          onChange={handleChange}
-          style={inputStyle}
+          onChange={(e) =>
+            setForm({ ...form, name: e.target.value })
+          }
         />
 
-        {/* Father ID */}
-        <label>Father ID</label>
-        <input
-          name="father_id"
-          value={form.father_id}
-          onChange={handleChange}
-          style={inputStyle}
-        />
+        <label>Father</label>
+        <select
+          value={form.father_id || ""}
+          onChange={(e) =>
+            setForm({ ...form, father_id: e.target.value || null })
+          }
+        >
+          <option value="">-- No Father --</option>
+          {members
+            .filter((m) => m.id !== member.id)
+            .map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+        </select>
 
-        {/* Village */}
         <label>Village</label>
         <input
-          name="village"
           value={form.village}
-          onChange={handleChange}
-          style={inputStyle}
+          onChange={(e) =>
+            setForm({ ...form, village: e.target.value })
+          }
         />
 
-        {/* DOB */}
         <label>Date of Birth</label>
         <input
           type="date"
-          name="dob"
-          value={form.dob}
-          onChange={handleChange}
-          style={inputStyle}
+          value={form.dob || ""}
+          onChange={(e) =>
+            setForm({ ...form, dob: e.target.value })
+          }
         />
 
-        {/* ACTIONS */}
-        <div style={btnRow}>
+        <div style={{ marginTop: 15 }}>
           <button
-            style={saveBtn}
+            style={{ background: "green", color: "#fff" }}
             onClick={() => onUpdate(form)}
           >
             💾 Update
           </button>
 
           <button
-            style={deleteBtn}
+            style={{ background: "red", color: "#fff", marginLeft: 8 }}
             onClick={() => onDelete(member.id)}
           >
             🗑 Delete
           </button>
 
-          <button
-            style={cancelBtn}
-            onClick={onClose}
-          >
+          <button onClick={onClose} style={{ marginLeft: 8 }}>
             ❌ Cancel
           </button>
         </div>
@@ -83,69 +86,20 @@ export default function EditMemberModal({ member, onUpdate, onDelete, onClose })
   );
 }
 
-/* 🎨 STYLES */
-
-const overlayStyle = {
+/* styles */
+const overlay = {
   position: "fixed",
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
+  inset: 0,
   background: "rgba(0,0,0,0.5)",
   display: "flex",
-  justifyContent: "center",
   alignItems: "center",
-  zIndex: 999,
+  justifyContent: "center",
 };
 
-const modalStyle = {
+const modal = {
   background: "#fff",
   padding: 20,
+  width: 360,
   borderRadius: 10,
-  width: 320,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
 };
 
-const inputStyle = {
-  width: "100%",
-  padding: 8,
-  marginBottom: 10,
-  borderRadius: 5,
-  border: "1px solid #ccc",
-};
-
-const btnRow = {
-  display: "flex",
-  gap: 8,
-  marginTop: 10,
-};
-
-const saveBtn = {
-  flex: 1,
-  background: "#16a34a",
-  color: "#fff",
-  border: "none",
-  padding: 8,
-  borderRadius: 5,
-  cursor: "pointer",
-};
-
-const deleteBtn = {
-  flex: 1,
-  background: "#dc2626",
-  color: "#fff",
-  border: "none",
-  padding: 8,
-  borderRadius: 5,
-  cursor: "pointer",
-};
-
-const cancelBtn = {
-  flex: 1,
-  background: "#6b7280",
-  color: "#fff",
-  border: "none",
-  padding: 8,
-  borderRadius: 5,
-  cursor: "pointer",
-};
