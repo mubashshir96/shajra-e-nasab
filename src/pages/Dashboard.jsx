@@ -28,6 +28,23 @@ export default function Dashboard() {
 
   loadMembers();
 };
+	const deleteMember = async (id) => {
+  if (!confirm("⚠️ Are you sure you want to delete this member?")) return;
+
+  const { error } = await supabase
+    .from("members")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id); // 🔐 owner check
+
+  if (error) {
+    alert("Delete failed: " + error.message);
+    return;
+  }
+
+  loadMembers();
+};
+
 
   const { t, lang, setLang, isRTL } = useLang();
 
